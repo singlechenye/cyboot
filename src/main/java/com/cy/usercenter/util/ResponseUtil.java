@@ -11,10 +11,13 @@ import static com.cy.usercenter.constant.ResponseConstants.*;
 public class ResponseUtil {
 
     public static <T> Response<T> success(T data){
-        return new Response<>(CODE_SUCCESS,data,MSG_SUCCESS);
+        int code = SUCCESS.getCode();
+        String msg = SUCCESS.getMsg();
+        return new Response<>(code,data,msg);
     }
 
-    public static Response err(int code,String message){
-        return new Response<>(code,null,message);
+    public static Response error(int code,String msg ){
+
+        return new Response<>(code,null,msg);
     }
 }

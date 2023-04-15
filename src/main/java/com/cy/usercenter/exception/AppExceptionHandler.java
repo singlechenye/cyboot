@@ -1,8 +1,8 @@
 package com.cy.usercenter.exception;
 
+import com.cy.usercenter.constant.ResponseConstants;
 import com.cy.usercenter.model.response.Response;
 import com.cy.usercenter.util.ResponseUtil;
-import com.cy.usercenter.constant.ResponseConstants;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -15,14 +15,15 @@ public class AppExceptionHandler {
 
     @ExceptionHandler(AppException.class)
     public Response appExceptionHandler(AppException appException){
-        System.out.println("zs"+appException);
-        return ResponseUtil.err(appException.getCode(), appException.getMsg());
+        int code = appException.getCode();
+        String msg = appException.getMsg();
+        return ResponseUtil.error(code,msg);
     }
 
-    @ExceptionHandler(RuntimeException.class)
+    @ExceptionHandler(Exception.class)
     public Response exceptionHandler(Exception exception){
-        System.out.println("zs"+exception);
-        return ResponseUtil.err(ResponseConstants.CODE_SYSTEM_ERROR, ResponseConstants.MSG_SYSTEM_ERROR);
+        int code = ResponseConstants.SYSTEM_ERROR.getCode();
+        String msg = ResponseConstants.SYSTEM_ERROR.getMsg();
+        return ResponseUtil.error(code,msg);
     }
-
 }

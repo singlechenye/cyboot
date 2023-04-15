@@ -1,21 +1,22 @@
 package com.cy.usercenter.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+
+import com.cy.usercenter.constant.ResponseConstants;
 import com.cy.usercenter.model.domain.User;
 import com.cy.usercenter.model.request.LoginBody;
 import com.cy.usercenter.model.request.RegisterBody;
 import com.cy.usercenter.model.response.Response;
 import com.cy.usercenter.util.ResponseUtil;
 import com.cy.usercenter.service.UserService;
-import com.cy.usercenter.constant.ResponseConstants;
 import com.cy.usercenter.constant.UserConstants;
 import com.cy.usercenter.util.ExceptionUtil;
-import org.apache.commons.lang3.StringUtils;
+
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.util.List;
-import java.util.stream.Collectors;
+
+import static com.cy.usercenter.util.UserUtil.getSafetyUser;
 
 @RestController
 @RequestMapping("/user")
@@ -23,9 +24,10 @@ public class UserController {
     @Resource
     private UserService userService;
 
+
     @RequestMapping("/register")
     public Response<Long> register(@RequestBody RegisterBody registerBody, HttpServletRequest request){
-        if(registerBody==null) ExceptionUtil.throwAppErr(ResponseConstants.CODE_PARAMETER_ERROR, ResponseConstants.MSG_PARAMETER_ERROR);
+        if(registerBody==null) ExceptionUtil.throwAppErr(ResponseConstants.PARAMETER_ERROR);
         System.out.println(registerBody);
         String userAccount = registerBody.getUserAccount();
         String password = registerBody.getPassword();
@@ -34,49 +36,53 @@ public class UserController {
         return ResponseUtil.success(register);
 
     }
+
+    /**
+     *
+     * @param loginBody
+     * @param request
+     * @return Response<User>
+     * 有了spring security,此接口无需实现
+     */
     @RequestMapping("/login")
-    public Response<User> login(@RequestBody LoginBody loginBody, HttpServletRequest request){
-        if (loginBody==null) ExceptionUtil.throwAppErr(ResponseConstants.CODE_PARAMETER_ERROR, ResponseConstants.MSG_PARAMETER_ERROR);
-        String userAccount = loginBody.getUserAccount();
-        String password = loginBody.getPassword();
-        User user = userService.login(userAccount, password, request);
-        return ResponseUtil.success(user);
+    public void login(@RequestBody LoginBody loginBody, HttpServletRequest request){
+//        if (loginBody==null) ExceptionUtil.throwAppErr(ResponseConstants.PARAMETER_ERROR);
+//        String userAccount = loginBody.getUserAccount();
+//        String password = loginBody.getPassword();
+//        User user = userService.login(userAccount, password, request);
+//        return ResponseUtil.success(null);
     }
+
+    /**
+     *
+     * @param request
+     * @return Response<Integer>
+     * 有了spring security,此接口无需实现
+     */
     @RequestMapping("/logout")
-    public Response<Integer> Logout( HttpServletRequest request){
-        if (request.getAttribute(UserConstants.USER_LOGIN_STATE)==null) ExceptionUtil.throwAppErr(ResponseConstants.CODE_NOT_LOGIN_ERROR, ResponseConstants.MSG_NOT_LOGIN_ERROR);
-        int logout = userService.Logout(request);
-        return ResponseUtil.success(logout);
+    @PreAuthorize("hasAnyAuthority('normal-user','vip-user')")
+    public void Logout( HttpServletRequest request){
+//        if (request.getAttribute(UserConstants.USER_LOGIN_STATE)==null) ExceptionUtil.throwAppErr(ResponseConstants.NOT_LOGIN_ERROR);
+//        int logout = userService.Logout(request);
+//        return ResponseUtil.success(logout);
     }
-    @GetMapping("/search")
-    public Response<List<User>> search(String username, HttpServletRequest request){
-        if (!isAdmin(request)) ExceptionUtil.throwAppErr(ResponseConstants.CODE_AUTH_ERROR, ResponseConstants.MSG_AUTH_ERROR);
-        QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
-        if (!StringUtils.isEmpty(username)) userQueryWrapper.like("username",username);
-        List<User> users = userService.list(userQueryWrapper).stream().map(user -> {
-            userService.getSafetyUser(user);
-            return user;
-        }).collect(Collectors.toList());
-        return ResponseUtil.success(users);
-    }
+
     @GetMapping("/current")
+    @PreAuthorize("hasAnyAuthority('normal-user','vip-user')")
     public Response<User> getCurrentUser(HttpServletRequest request){
         User user = (User) request.getSession().getAttribute(UserConstants.USER_LOGIN_STATE);
-        if (user==null) ExceptionUtil.throwAppErr(ResponseConstants.CODE_NOT_LOGIN_ERROR, ResponseConstants.MSG_NOT_LOGIN_ERROR);
-        User safetyUser = userService.getSafetyUser(userService.getById(user.getId()));
+        if (user==null) ExceptionUtil.throwAppErr(ResponseConstants.NOT_LOGIN_ERROR);
+        User safetyUser = getSafetyUser(userService.getById(user.getId()));
         return ResponseUtil.success(safetyUser);
     }
-    @PostMapping("/delete")
-    public Response<Boolean> deleteById(Long id, HttpServletRequest request){
-        if (isAdmin(request)) ExceptionUtil.throwAppErr(ResponseConstants.CODE_AUTH_ERROR, ResponseConstants.MSG_AUTH_ERROR);
-        if (id<0) ExceptionUtil.throwAppErr(ResponseConstants.CODE_PARAMETER_ERROR, ResponseConstants.MSG_PARAMETER_ERROR);
+
+    @PostMapping("/dump")
+    @PreAuthorize("hasAnyAuthority('normal-user','vip-user')")
+    public Response<Boolean> dump(HttpServletRequest request){
+        User user = (User) request.getSession().getAttribute(UserConstants.USER_LOGIN_STATE);
+        if (user==null) ExceptionUtil.throwAppErr(ResponseConstants.NOT_LOGIN_ERROR);
+        Long id = user.getId();
         boolean b = userService.removeById(id);
         return ResponseUtil.success(b);
     }
-    private boolean isAdmin(HttpServletRequest request) {
-        User user;
-        if ((user = (User) request.getSession().getAttribute(UserConstants.USER_LOGIN_STATE))==null) ExceptionUtil.throwAppErr(ResponseConstants.CODE_NOT_LOGIN_ERROR, ResponseConstants.MSG_NOT_LOGIN_ERROR);
-        return user.getUserRole() == UserConstants.USER_ROLE_ADMIN;
-    }
-
 }
