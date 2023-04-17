@@ -2,11 +2,18 @@ package com.cy.usercenter.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.cy.usercenter.model.domain.SecurityUserDetails;
 import com.cy.usercenter.model.domain.User;
 import com.cy.usercenter.service.UserService;
 import com.cy.usercenter.mapper.UserMapper;
+import com.cy.usercenter.util.JwtUtil;
+import com.cy.usercenter.util.RedisCacheUtil;
 import com.cy.usercenter.util.UserUtil;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.data.redis.cache.RedisCache;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
@@ -14,6 +21,8 @@ import org.springframework.util.DigestUtils;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
+import java.util.Objects;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
@@ -25,6 +34,12 @@ import static com.cy.usercenter.util.UserUtil.getSafetyUser;
 
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService{
+
+    @Resource
+    private AuthenticationManager authenticationManager;
+
+    @Resource
+    private RedisCacheUtil redisCacheUtil;
 
 
 
@@ -62,8 +77,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
 
 
-    //    @Override
-//    public User login(String userAccount, String password, HttpServletRequest request) {
+    @Override
+    public String login(String userAccount, String password) {
 //        checkParam(userAccount,password);
 //        String encryptionPassword = encryptionPassword(password);
 //        QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
@@ -75,7 +90,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 //        getSafetyUser(user);
 //        request.getSession().setAttribute(USER_LOGIN_STATE,user);
 //        return user;
-//    }
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userAccount,password);
+        Authentication authentication = authenticationManager.authenticate(authenticationToken);
+        if (Objects.isNull(authentication)) throwAppErr(LOGIN_PASSWORD_WRONG_ERROR);
+        SecurityUserDetails userDetails = (SecurityUserDetails) authentication.getPrincipal();
+        User user = userDetails.getUser();
+        redisCacheUtil.setCacheObject("login:"+user.getId(),user,24*60*60, TimeUnit.SECONDS);
+        return JwtUtil.createJwt(user.getUserAccount());
+    }
     @Override
     public int Logout(HttpServletRequest request) {
         request.removeAttribute(USER_LOGIN_STATE);

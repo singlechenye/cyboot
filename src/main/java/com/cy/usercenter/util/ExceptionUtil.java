@@ -1,7 +1,7 @@
 package com.cy.usercenter.util;
 
 import com.cy.usercenter.constant.ResponseConstants;
-import com.cy.usercenter.exception.AppException;
+import com.cy.usercenter.model.exception.AppException;
 
 /**
  * @author 86147

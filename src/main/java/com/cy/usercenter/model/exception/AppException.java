@@ -1,4 +1,4 @@
-package com.cy.usercenter.exception;
+package com.cy.usercenter.model.exception;
 
 /**
  * @author 86147

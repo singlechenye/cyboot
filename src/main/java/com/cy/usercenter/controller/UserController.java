@@ -6,6 +6,7 @@ import com.cy.usercenter.model.domain.User;
 import com.cy.usercenter.model.request.LoginBody;
 import com.cy.usercenter.model.request.RegisterBody;
 import com.cy.usercenter.model.response.Response;
+import com.cy.usercenter.util.JwtUtil;
 import com.cy.usercenter.util.ResponseUtil;
 import com.cy.usercenter.service.UserService;
 import com.cy.usercenter.constant.UserConstants;
@@ -15,6 +16,10 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import java.util.HashMap;
+import java.util.Map;
 
 import static com.cy.usercenter.util.UserUtil.getSafetyUser;
 
@@ -38,19 +43,20 @@ public class UserController {
     }
 
     /**
-     *
      * @param loginBody
      * @param request
      * @return Response<User>
      * 有了spring security,此接口无需实现
      */
     @RequestMapping("/login")
-    public void login(@RequestBody LoginBody loginBody, HttpServletRequest request){
-//        if (loginBody==null) ExceptionUtil.throwAppErr(ResponseConstants.PARAMETER_ERROR);
-//        String userAccount = loginBody.getUserAccount();
-//        String password = loginBody.getPassword();
-//        User user = userService.login(userAccount, password, request);
-//        return ResponseUtil.success(null);
+    public Response<Object> login(@RequestBody LoginBody loginBody, HttpServletRequest request, HttpServletResponse response){
+        if (loginBody==null) ExceptionUtil.throwAppErr(ResponseConstants.PARAMETER_ERROR);
+        String userAccount = loginBody.getUserAccount();
+        String password = loginBody.getPassword();
+        String jwt = userService.login(userAccount, password);
+        Map<String, String> tokenMap = new HashMap<>();
+        tokenMap.put("token",jwt);
+        return ResponseUtil.success(tokenMap);
     }
 
     /**
