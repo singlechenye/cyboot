@@ -2,7 +2,7 @@ package com.cy.usercenter.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.cy.usercenter.model.domain.SecurityUserDetails;
+import com.cy.usercenter.model.domain.CustomUserDetails;
 import com.cy.usercenter.model.domain.User;
 import com.cy.usercenter.service.UserService;
 import com.cy.usercenter.mapper.UserMapper;
@@ -10,16 +10,14 @@ import com.cy.usercenter.util.JwtUtil;
 import com.cy.usercenter.util.RedisCacheUtil;
 import com.cy.usercenter.util.UserUtil;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.data.redis.cache.RedisCache;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.util.DigestUtils;
 
 import javax.annotation.Resource;
-import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Objects;
 import java.util.concurrent.TimeUnit;
@@ -30,7 +28,6 @@ import java.util.stream.Collectors;
 import static com.cy.usercenter.constant.ResponseConstants.*;
 import static com.cy.usercenter.constant.UserConstants.*;
 import static com.cy.usercenter.util.ExceptionUtil.throwAppErr;
-import static com.cy.usercenter.util.UserUtil.getSafetyUser;
 
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService{
@@ -42,20 +39,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private RedisCacheUtil redisCacheUtil;
 
 
-
     @Override
     public List<User> searchUser(String username) {
         QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
         if (!StringUtils.isEmpty(username)) userQueryWrapper.like("username",username);
-        return this.list(userQueryWrapper).stream().peek(UserUtil::getSafetyUser).collect(Collectors.toList());
-    }
-
-    @Override
-    public boolean banUser(long id) {
-        User user = new User();
-        user.setUserStatus(0);
-        user.setId(id);
-        return updateById(user);
+        return this.list(userQueryWrapper).stream().map(UserUtil::getSafetyUser).collect(Collectors.toList());
     }
 
     @Override
@@ -75,37 +63,27 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return 0;
     }
 
-
-
     @Override
     public String login(String userAccount, String password) {
-//        checkParam(userAccount,password);
-//        String encryptionPassword = encryptionPassword(password);
-//        QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
-//        userQueryWrapper.eq("userAccount",userAccount);
-//        userQueryWrapper.eq("password",encryptionPassword);
-//        User user;
-//        if ((user=this.getOne(userQueryWrapper))==null) throwAppErr(LOGIN_NOT_EXIST_ERROR);
-//        if (!user.getPassword().equals(password)) throwAppErr(LOGIN_PASSWORD_WRONG_ERROR);
-//        getSafetyUser(user);
-//        request.getSession().setAttribute(USER_LOGIN_STATE,user);
-//        return user;
         UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userAccount,password);
         Authentication authentication = authenticationManager.authenticate(authenticationToken);
         if (Objects.isNull(authentication)) throwAppErr(LOGIN_PASSWORD_WRONG_ERROR);
-        SecurityUserDetails userDetails = (SecurityUserDetails) authentication.getPrincipal();
+        CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         User user = userDetails.getUser();
-        redisCacheUtil.setCacheObject("login:"+user.getId(),user,24*60*60, TimeUnit.SECONDS);
+        redisCacheUtil.setCacheObject(REDIS_LOGIN_KEY+user.getId(),user,24*60*60, TimeUnit.SECONDS);
         return JwtUtil.createJwt(user.getUserAccount());
     }
     @Override
-    public int Logout(HttpServletRequest request) {
-        request.removeAttribute(USER_LOGIN_STATE);
-        return 1;
+    public void Logout() {
+        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        redisCacheUtil.deleteObject(REDIS_LOGIN_KEY+userDetails.getUser().getId());
     }
 
     @Override
-    public boolean dump(int id) {
+    public boolean dump() {
+        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Long id = userDetails.getUser().getId();
+        redisCacheUtil.deleteObject(REDIS_LOGIN_KEY+id);
         return this.removeById(id);
     }
 
@@ -129,8 +107,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     public String encryptionPassword(String password) {
         return new BCryptPasswordEncoder().encode(password);
     }
-
-
 }
 
 

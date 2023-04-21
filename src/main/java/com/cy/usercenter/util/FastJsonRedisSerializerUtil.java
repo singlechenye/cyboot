@@ -10,18 +10,18 @@ import org.springframework.data.redis.serializer.SerializationException;
 import com.alibaba.fastjson.parser.ParserConfig;
 import org.springframework.util.Assert;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Redis使用FastJson序列化
- *
  * @author jrm
  */
 public class FastJsonRedisSerializerUtil<T> implements RedisSerializer<T>
 {
     private ObjectMapper objectMapper = new ObjectMapper();
-    public static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
+    public static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
-    private Class<T> clazz;
+    private final Class<T> clazz;
 
     static
     {
@@ -49,7 +49,7 @@ public class FastJsonRedisSerializerUtil<T> implements RedisSerializer<T>
     @Override
     public T deserialize(byte[] bytes) throws SerializationException
     {
-        if (bytes == null || bytes.length <= 0)
+        if (bytes == null || bytes.length == 0)
         {
             return null;
         }

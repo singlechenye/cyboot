@@ -22,7 +22,6 @@ public class RedisConfig extends CachingConfigurerSupport {
     private RedisConnectionFactory redisConnectionFactory;
 
 
-
     /**
      *  设置 redis 数据默认过期时间，默认1天
      *  设置@cacheable 序列化方式

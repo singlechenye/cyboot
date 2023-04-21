@@ -2,16 +2,16 @@ package com.cy.usercenter.filter;
 
 
 import com.cy.usercenter.constant.ResponseConstants;
-import com.cy.usercenter.model.domain.SecurityUserDetails;
+import com.cy.usercenter.model.domain.CustomUserDetails;
 import com.cy.usercenter.model.domain.User;
 import com.cy.usercenter.util.ExceptionUtil;
 import com.cy.usercenter.util.JwtUtil;
 import com.cy.usercenter.util.RedisCacheUtil;
 import io.jsonwebtoken.Claims;
 import org.apache.logging.log4j.util.Strings;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.annotation.Resource;
@@ -26,11 +26,8 @@ import java.util.Objects;
  * @author 86147
  * create  17/4/2023 下午3:17
  */
+@Component
 public class JwtSecurityFilter extends OncePerRequestFilter {
-
-
-    @Resource
-    private AuthenticationManager authenticationManager;
 
     @Resource
     private RedisCacheUtil redisCacheUtil;
@@ -54,8 +51,8 @@ public class JwtSecurityFilter extends OncePerRequestFilter {
         if (Objects.isNull(user)) {
             ExceptionUtil.throwAppErr(ResponseConstants.NOT_LOGIN_ERROR);
         }
-        SecurityUserDetails securityUserDetails = new SecurityUserDetails(user);
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(securityUserDetails,null,null );
+        CustomUserDetails customUserDetails = new CustomUserDetails(user);
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(customUserDetails,null,null );
         SecurityContextHolder.getContext().setAuthentication(authenticationToken);
         filterChain.doFilter(request,response);
     }

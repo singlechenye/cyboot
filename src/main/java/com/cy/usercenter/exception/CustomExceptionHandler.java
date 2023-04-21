@@ -16,6 +16,7 @@ public class CustomExceptionHandler {
 
     @ExceptionHandler(AppException.class)
     public Response appExceptionHandler(AppException appException){
+        appException.printStackTrace();
         int code = appException.getCode();
         String msg = appException.getMsg();
         return ResponseUtil.error(code,msg);
@@ -23,6 +24,7 @@ public class CustomExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public Response exceptionHandler(Exception exception){
+        exception.printStackTrace();
         int code = ResponseConstants.SYSTEM_ERROR.getCode();
         String msg = ResponseConstants.SYSTEM_ERROR.getMsg();
         return ResponseUtil.error(code,msg);

@@ -13,13 +13,13 @@ import java.util.UUID;
 
 public class JwtUtil {
     //定义默认有效期为一个小时 单位：毫秒
-    public static final Long JWT_Default_Expires = 24 * 60 * 60 * 1000L;
+    public static final Long JWT_DEFAULT_EXPIRES = 24 * 60 * 60 * 1000L;
 
     //设置明文密钥(注意 不能含有非法字符)
-    public static final String JWT_KEY = "takeitboy";
+    public static final String JWT_KEY = "FakeItEasyTo";
 
     //签发者
-    public static final String Issuer = "chenye";
+    public static final String ISSUER = "chenye";
 
     public static String getUUID(){
         return UUID.randomUUID().toString().replaceAll("-","");
@@ -27,10 +27,7 @@ public class JwtUtil {
 
     /**
      * 创建一个token
-     * @param id
      * @param subject   可以理解为存放实际需要传递的数据
-     * @param settingExpiresTime
-     * @return
      */
     public static String createJWT(String id, String subject, Long settingExpiresTime){
         //创建我们将要使用的JWT签名算法对（token）令牌进行签名
@@ -45,20 +42,20 @@ public class JwtUtil {
         //SettingExpiresTime判断用户是否需要设置token有效时间
         if (settingExpiresTime == null) {
             //如果为空，将默认有效期赋值给SettingExpiresTime
-            settingExpiresTime = JWT_Default_Expires;
+            settingExpiresTime = JWT_DEFAULT_EXPIRES;
         }
 
         //结束时间 = 当前时间 + 设定的有效期时间
-        Long ExpiresTime = nowMillis + settingExpiresTime;
+        long expiresTime = nowMillis + settingExpiresTime;
         //转换为date数据类型
-        Date date = new Date(ExpiresTime);
+        Date date = new Date(expiresTime);
 
         JwtBuilder builder = Jwts.builder()
                 .setHeaderParam("typ", "JWT")    //一下两行就是Header
                 .setHeaderParam("alg", "HS256")
                 .setId(id)
                 .setSubject(subject) //主题，可以是json数据
-                .setIssuer(Issuer)   //签发者
+                .setIssuer(ISSUER)   //签发者
                 .setIssuedAt(now)   //签发时间
                 .signWith(signatureAlgorithm,generalKey()) //使用ES256对称加密算法签名，第二个参数为加密后的明文密钥
                 .setExpiration(date);   //设置过期时间
@@ -77,21 +74,16 @@ public class JwtUtil {
 
     /**
      * 加密明文密钥
-     * @return
      */
     public static SecretKey generalKey(){
         //调用base64中的getDecoder方法获取解码器，调用解码器中的decode方法将明文密钥进行编码
         byte[] encodedKey = Base64.getDecoder().decode(JWT_KEY);
         //AES：加密方式
-        SecretKey secretKey = new SecretKeySpec(encodedKey,0,encodedKey.length,"AES");
-        //返回加密后的密钥
-        return secretKey;
+        return new SecretKeySpec(encodedKey,0,encodedKey.length,"AES");
     }
 
     /**
      * 解析jwt
-     * @param jwt
-     * @return
      */
     //此处当解析不出的时候会抛出异常
     public static Claims parseJWT(String jwt) throws Exception{
@@ -99,10 +91,6 @@ public class JwtUtil {
                 .setSigningKey(generalKey())    //设置加密后的密钥进行比对
                 .parseClaimsJws(jwt)    //解析传入的jwt字符串
                 .getBody();     // 拿到claims对象返回
-    }
-
-
-    public static void main(String[] args) {
     }
 
 

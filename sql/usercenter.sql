@@ -19,11 +19,3 @@ create table user
     isDelete    tinyint unsigned zerofill default 0                 null,
     userRole    int                       default 0                 not null
 );
-
-create table admin
-(
-    id       int auto_increment
-        primary key,
-    account  varchar(255) null,
-    password varchar(255) null
-);
