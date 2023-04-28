@@ -6,7 +6,7 @@ create table user
 (
     id          bigint auto_increment
         primary key,
-    userAccount varchar(255)                                        null,
+    username varchar(255)                                        null,
     username    varchar(255)                                        null,
     password    varchar(255)                                        null,
     imageUrl    varchar(1024)                                       null,

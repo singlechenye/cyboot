@@ -10,7 +10,7 @@ import lombok.Data;
 public class RegisterBody {
     private static final long serialVersionUID = 1L;
 
-    private String userAccount;
+    private String username;
 
     private String password;
 

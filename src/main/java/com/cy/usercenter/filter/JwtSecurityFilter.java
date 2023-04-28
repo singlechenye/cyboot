@@ -1,6 +1,7 @@
 package com.cy.usercenter.filter;
 
 
+import com.alibaba.fastjson.JSON;
 import com.cy.usercenter.constant.ResponseConstants;
 import com.cy.usercenter.model.domain.CustomUserDetails;
 import com.cy.usercenter.model.domain.User;
@@ -21,6 +22,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Objects;
+
+import static com.cy.usercenter.constant.UserConstants.REDIS_LOGIN_KEY;
 
 /**
  * @author 86147
@@ -47,12 +50,15 @@ public class JwtSecurityFilter extends OncePerRequestFilter {
             ExceptionUtil.throwAppErr(ResponseConstants.PARAMETER_ERROR);
         }
 
-        User user = redisCacheUtil.getCacheObject("login:" + subject);
+        Object cacheObject = redisCacheUtil.getCacheObject(REDIS_LOGIN_KEY + subject);
+        User user = JSON.parseObject(cacheObject.toString(), User.class);
+
+
         if (Objects.isNull(user)) {
             ExceptionUtil.throwAppErr(ResponseConstants.NOT_LOGIN_ERROR);
         }
         CustomUserDetails customUserDetails = new CustomUserDetails(user);
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(customUserDetails,null,null );
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(customUserDetails,null,customUserDetails.getAuthorities() );
         SecurityContextHolder.getContext().setAuthentication(authenticationToken);
         filterChain.doFilter(request,response);
     }

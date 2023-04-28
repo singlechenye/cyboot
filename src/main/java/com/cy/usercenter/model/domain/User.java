@@ -24,27 +24,12 @@ public class User implements Serializable {
     /**
      * 
      */
-    private String userAccount;
-
-    /**
-     * 
-     */
     private String username;
 
     /**
      * 
      */
     private String password;
-
-    /**
-     * 
-     */
-    private String imageUrl;
-
-    /**
-     * 
-     */
-    private Integer gender;
 
     /**
      * 
@@ -81,4 +66,20 @@ public class User implements Serializable {
     private static final long serialVersionUID = 1L;
 
     private Integer userRole;
+
+    public User() {
+    }
+
+    public User(Long id, String username, String password, String phone, String email, Integer userStatus, Date createTime, Date updateTime, Integer isDelete, Integer userRole) {
+        this.id = id;
+        this.username = username;
+        this.password = password;
+        this.phone = phone;
+        this.email = email;
+        this.userStatus = userStatus;
+        this.createTime = createTime;
+        this.updateTime = updateTime;
+        this.isDelete = isDelete;
+        this.userRole = userRole;
+    }
 }

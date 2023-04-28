@@ -21,20 +21,13 @@ import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.security.web.AuthenticationEntryPoint;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import javax.annotation.Resource;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.util.Objects;
 
-import static com.cy.usercenter.constant.ResponseConstants.AUTH_LACK_ERROR;
-import static com.cy.usercenter.constant.ResponseConstants.NOT_LOGIN_ERROR;
+import static com.cy.usercenter.constant.ResponseConstants.*;
 
 
 @Configuration
@@ -55,9 +48,9 @@ public class SecurityConfig {
     public UserDetailsService userDetailsService(){
         return new UserDetailsService() {
             @Override
-            public UserDetails loadUserByUsername(String userAccount) throws UsernameNotFoundException {
+            public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
                 QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
-                userQueryWrapper.eq("userAccount",userAccount);
+                userQueryWrapper.eq("username",username);
                 User user = userMapper.selectOne(userQueryWrapper);
                 if (Objects.isNull(user)) ExceptionUtil.throwAppErr(ResponseConstants.LOGIN_NOT_EXIST_ERROR);
                 return new CustomUserDetails(user);
@@ -80,26 +73,20 @@ public class SecurityConfig {
                 .disable()
                 .addFilterBefore(jwtSecurityFilter, UsernamePasswordAuthenticationFilter.class)
                 .exceptionHandling()
-                .accessDeniedHandler(new AccessDeniedHandler() {
-                    @Override
-                    public void handle(HttpServletRequest request, HttpServletResponse response, AccessDeniedException accessDeniedException) throws IOException, ServletException {
-                        response.setStatus(200);
-                        response.setContentType("application/json");
-                        Response<Object> objectResponse = new Response<>(AUTH_LACK_ERROR.getCode(), null, AUTH_LACK_ERROR.getMsg());
-                        String s = JSON.toJSONString(objectResponse);
-                        response.getWriter().write(s);
-                    }
+                .accessDeniedHandler((request, response, accessDeniedException) -> {
+                    response.setStatus(200);
+                    response.setContentType("application/json");
+                    Response<Object> objectResponse = new Response<>(AUTH_LACK_ERROR.getCode(), null, AUTH_LACK_ERROR.getMsg());
+                    String s = JSON.toJSONString(objectResponse);
+                    response.getWriter().write(s);
                 })
-                .authenticationEntryPoint(new AuthenticationEntryPoint() {
-                    @Override
-                    public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException, ServletException {
-                        response.setStatus(200);
-                        response.setContentType("application/json");
-                        Response<Object> objectResponse = new Response<>(NOT_LOGIN_ERROR.getCode(), null, NOT_LOGIN_ERROR.getMsg());
-                        String s = JSON.toJSONString(objectResponse);
-                        response.getWriter().write(s);
-
-                    }
+                .authenticationEntryPoint((request, response, authException) -> {
+                    response.setStatus(200);
+                    response.setContentType("application/json");
+                    Response<Object> objectResponse = new Response<>(AUTH_CHECK_ERROR.getCode(), null, AUTH_CHECK_ERROR.getMsg());
+                    String s = JSON.toJSONString(objectResponse);
+                    response.setCharacterEncoding("UTF-8");
+                    response.getWriter().write(s);
                 });
 
         return httpSecurity.build();

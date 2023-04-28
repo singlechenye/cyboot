@@ -1,36 +1,32 @@
 package com.cy.usercenter.util;
 
-import com.alibaba.fastjson.JSON;
+import java.nio.charset.Charset;
+
+import com.alibaba.fastjson.parser.ParserConfig;
 import com.alibaba.fastjson.serializer.SerializerFeature;
+import com.alibaba.fastjson2.JSON;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.SerializationException;
-import com.alibaba.fastjson.parser.ParserConfig;
 import org.springframework.util.Assert;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
 
-/**
- * Redis使用FastJson序列化
- * @author jrm
- */
-public class FastJsonRedisSerializerUtil<T> implements RedisSerializer<T>
+public class FastJson2JsonRedisSerializer<T> implements RedisSerializer<T>
 {
+    @SuppressWarnings("unused")
     private ObjectMapper objectMapper = new ObjectMapper();
-    public static final Charset DEFAULT_CHARSET = StandardCharsets.UTF_8;
 
-    private final Class<T> clazz;
+    public static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
+
+    private Class<T> clazz;
 
     static
     {
         ParserConfig.getGlobalInstance().setAutoTypeSupport(true);
-        //如果遇到反序列化autoType is not support错误，请添加并修改一下包名到bean文件路径
-        // ParserConfig.getGlobalInstance().addAccept("com.xxxxx.xxx");
     }
 
-    public FastJsonRedisSerializerUtil(Class<T> clazz)
+    public FastJson2JsonRedisSerializer(Class<T> clazz)
     {
         super();
         this.clazz = clazz;
@@ -43,13 +39,13 @@ public class FastJsonRedisSerializerUtil<T> implements RedisSerializer<T>
         {
             return new byte[0];
         }
-        return JSON.toJSONString(t, SerializerFeature.WriteClassName).getBytes(DEFAULT_CHARSET);
+        return JSON.toJSONString(t, String.valueOf(SerializerFeature.WriteClassName)).getBytes(DEFAULT_CHARSET);
     }
 
     @Override
     public T deserialize(byte[] bytes) throws SerializationException
     {
-        if (bytes == null || bytes.length == 0)
+        if (bytes == null || bytes.length <= 0)
         {
             return null;
         }
@@ -58,7 +54,8 @@ public class FastJsonRedisSerializerUtil<T> implements RedisSerializer<T>
         return JSON.parseObject(str, clazz);
     }
 
-    public void setObjectMapper(ObjectMapper objectMapper) {
+    public void setObjectMapper(ObjectMapper objectMapper)
+    {
         Assert.notNull(objectMapper, "'objectMapper' must not be null");
         this.objectMapper = objectMapper;
     }

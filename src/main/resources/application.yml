@@ -1,17 +1,17 @@
 spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    username: { ... }
-    password: { ... }
-    url: { ... }
+    username: root
+    password: 1234
+    url: jdbc:mysql://localhost:3306/usercenter
 
   session:
     timeout: 3600
 
   redis:
-    host: { ... }
-    port: { ... }
-    password: { ... }
+    host: 152.32.209.192
+    port: 6379
+    password: 136814
     connect-timeout: 60s
     timeout: 120s
     lettuce:

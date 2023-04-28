@@ -6,11 +6,8 @@
 
     <resultMap id="BaseResultMap" type="com.cy.usercenter.model.domain.User">
             <id property="id" column="id" jdbcType="BIGINT"/>
-            <result property="userAccount" column="userAccount" jdbcType="VARCHAR"/>
             <result property="username" column="username" jdbcType="VARCHAR"/>
             <result property="password" column="password" jdbcType="VARCHAR"/>
-            <result property="imageUrl" column="imageUrl" jdbcType="VARCHAR"/>
-            <result property="gender" column="gender" jdbcType="TINYINT"/>
             <result property="phone" column="phone" jdbcType="VARCHAR"/>
             <result property="email" column="email" jdbcType="VARCHAR"/>
             <result property="userStatus" column="userStatus" jdbcType="INTEGER"/>
@@ -18,14 +15,12 @@
             <result property="updateTime" column="updateTime" jdbcType="TIMESTAMP"/>
             <result property="isDelete" column="isDelete" jdbcType="TINYINT"/>
             <result property="userRole" column="userRole" jdbcType="INTEGER"/>
-
     </resultMap>
 
     <sql id="Base_Column_List">
-        id,userAccount,username,
-        password,imageUrl,gender,
+        id,username,password,
         phone,email,userStatus,
-        createTime,updateTime,isDelete,
-        userRole
+        createTime,updateTime,
+        isDelete,userRole
     </sql>
 </mapper>

@@ -15,6 +15,4 @@ public class SpringConfig implements WebMvcConfigurer {
         registry.addMapping("/**")
                 .allowedOriginPatterns("*");
     }
-
-
 }

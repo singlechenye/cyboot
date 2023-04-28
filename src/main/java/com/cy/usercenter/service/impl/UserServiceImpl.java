@@ -1,5 +1,6 @@
 package com.cy.usercenter.service.impl;
 
+import com.alibaba.fastjson.JSON;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.cy.usercenter.model.domain.CustomUserDetails;
@@ -47,53 +48,61 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     @Override
-    public long register(String userAccount, String password, String checkPassword){
-        if (!password.equals(checkPassword)){
-            throwAppErr(PARAMETER_ERROR);
-        }
-        checkParam(userAccount,password);
-        String encryptionPassword = encryptionPassword(password);
-        QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
-        userQueryWrapper.eq("userAccount",userAccount);
-        if (this.count(userQueryWrapper)>0) throwAppErr(REGISTER_EXIST_ERROR);
-        User user = new User();
-        user.setUserAccount(userAccount);
-        user.setPassword(encryptionPassword);
-        this.save(user);
-        return 0;
+    public User Info() {
+        CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String username = userDetails.getUsername();
+        Object cacheObject = redisCacheUtil.getCacheObject(REDIS_LOGIN_KEY + username);
+        User user = JSON.parseObject(cacheObject.toString(), User.class);
+        return user;
     }
 
     @Override
-    public String login(String userAccount, String password) {
-        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(userAccount,password);
+    public void register(String username, String password, String checkPassword){
+        if (!password.equals(checkPassword)){
+            throwAppErr(PARAMETER_ERROR);
+        }
+        checkParam(username,password);
+        String encryptionPassword = encryptionPassword(password);
+        QueryWrapper<User> userQueryWrapper = new QueryWrapper<>();
+        userQueryWrapper.eq("username",username);
+        if (this.count(userQueryWrapper)>0) throwAppErr(REGISTER_EXIST_ERROR);
+        User user = new User();
+        user.setUsername(username);
+        user.setPassword(encryptionPassword);
+        this.save(user);
+    }
+
+    @Override
+    public String login(String username, String password) {
+        UsernamePasswordAuthenticationToken authenticationToken = new UsernamePasswordAuthenticationToken(username,password);
         Authentication authentication = authenticationManager.authenticate(authenticationToken);
         if (Objects.isNull(authentication)) throwAppErr(LOGIN_PASSWORD_WRONG_ERROR);
         CustomUserDetails userDetails = (CustomUserDetails) authentication.getPrincipal();
         User user = userDetails.getUser();
-        redisCacheUtil.setCacheObject(REDIS_LOGIN_KEY+user.getId(),user,24*60*60, TimeUnit.SECONDS);
-        return JwtUtil.createJwt(user.getUserAccount());
+        redisCacheUtil.setCacheObject(REDIS_LOGIN_KEY+userDetails.getUsername(),user,24*60*60, TimeUnit.SECONDS);
+        return JwtUtil.createJwt(user.getUsername());
     }
     @Override
     public void Logout() {
         CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        redisCacheUtil.deleteObject(REDIS_LOGIN_KEY+userDetails.getUser().getId());
+        redisCacheUtil.deleteObject(REDIS_LOGIN_KEY + userDetails.getUser().getId());
     }
 
     @Override
-    public boolean dump() {
+    public void dump() {
         CustomUserDetails userDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Long id = userDetails.getUser().getId();
-        redisCacheUtil.deleteObject(REDIS_LOGIN_KEY+id);
-        return this.removeById(id);
+        redisCacheUtil.deleteObject(REDIS_LOGIN_KEY + userDetails.getUser().getId());
+        this.removeById(id);
     }
 
     @Override
-    public void checkParam(String userAccount,String password) {
-        if (StringUtils.isAnyBlank(userAccount, password)) {
+    public void checkParam(String username,String password) {
+        if (StringUtils.isAnyBlank(username, password)) {
             throwAppErr(PARAMETER_ERROR);
         }
-        if (userAccount.length()<4) throwAppErr(PARAMETER_ERROR);
-        Matcher matcher = Pattern.compile(USER_ACCOUNT_MATCH).matcher(userAccount);
+        if (username.length()<4) throwAppErr(PARAMETER_ERROR);
+        Matcher matcher = Pattern.compile(USER_ACCOUNT_MATCH).matcher(username);
         if (matcher.find()) {
             throwAppErr(PARAMETER_ERROR);
         }

@@ -13,18 +13,19 @@ import java.util.List;
 */
 public interface UserService extends IService<User> {
 
-    long register(String userAccount, String password, String checkPassword);
+    void register(String username, String password, String checkPassword);
 
-    String login(String userAccount, String password);
+    String login(String username, String password);
 
     void Logout();
 
-    boolean dump();
+    void dump();
 
-    void checkParam(String userAccount,String password);
+    void checkParam(String username,String password);
 
     String encryptionPassword(String password);
 
     List<User> searchUser(String username);
 
+    User Info();
 }
